@@ -23,5 +23,6 @@ namespace Garage
                    $"Color: {Color,-8} | " +
                    $"Wheels: {AmountWheels,-2}";
         }
+        
     }
 }
