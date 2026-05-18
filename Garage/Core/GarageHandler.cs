@@ -1,63 +1,56 @@
-﻿using System;
+﻿using Garage.Interfaces;
+using Garage.Models;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Text;
 
-namespace Garage
+namespace Garage.Core
 {
-    internal class Garage
+    //Garagehandler hanterar felhantering på garagelogik, söklogik
+    internal class GarageHandler
     {
-        private Vehicle[] vehicles;
-        public Garage(int capacity)
+        private Garage<Vehicle> garage;
+        public GarageHandler(int size)
         {
-            vehicles = new Vehicle[capacity];
+
         }
-        public Vehicle? FindVehicle(string regNumber)
+        public void LoadTestVehicles()
         {
-            for (int i = 0; i < vehicles.Length; i++)
-            {
-                if (vehicles[i] != null && vehicles[i].RegistrationNumber == regNumber)
-                {
-                    return vehicles[i];
-                }
-            }
-            return null;
+            garage.ParkVehicle(new Car("ABC123", "Red", 4, "Diesel"), 0);
+            garage.ParkVehicle(new Boat("SEA777", "White", 0, 12), 1);
+            garage.ParkVehicle(new Bus("BUS999", "Blue", 6, 48), 2);
+            garage.ParkVehicle(new Motorcycle("MOTO55", "Black", 2, 600), 3);
+            garage.ParkVehicle(new Airplane("AIR101", "Silver", 8, 2), 4);
+            garage.ParkVehicle(new Car("XYZ888", "Gray", 4, "Gasoline"), 8);
         }
-        public bool ParkVehicle(Vehicle vehicle, int parkingSpot)
+        public (bool success, string message) ParkVehicle(Vehicle vehicle, int parkingSpot)
         {
-            if (parkingSpot < 0 || parkingSpot >= vehicles.Length)
+            if (garage.FindVehicle(vehicle.RegistrationNumber) != null)
             {
-                return false;
+                return (false, "Registration number already exists.");
             }
-            else if (vehicles[parkingSpot] != null)
+            if (!garage.ParkVehicle(vehicle, parkingSpot))
             {
-                return false;
+                return (false, "Parking spot is occupied or invalid.");
             }
-            else if (FindVehicle(vehicle.RegistrationNumber) != null)
-            {
-                return false;
-            }
-            else
-            {
-                vehicles[parkingSpot] = vehicle;
-                return true;
-            }
+            return (true, "Vehicle parked successfully!");
         }
         public void ListVehicles()
         {
             string output = "";
-            for (int i = 0; i < vehicles.Length; i++)
+
+            for (int i = 0; i < garage.Capacity; i++)
             {
+                var vehicle = garage.GetVehicleAtSpot(i);
+
                 output += $"Spot {i}: ";
-                if (vehicles[i] == null)
-                {
+
+                if (vehicle == null)
                     output += "Empty parking\n";
-                }
                 else
-                {
-                    output += vehicles[i].ToString()+"\n";
-                }
+                    output += vehicle + "\n";
             }
+
             Console.WriteLine("\n" + output);
         }
         public bool SellVehicle(string regNumber)
@@ -79,7 +72,7 @@ namespace Garage
             int counter = 0;
             Console.WriteLine("Searching...");
             Thread.Sleep(1500);
-            if (regNumber != null && regNumber.Length > 0 )
+            if (regNumber != null && regNumber.Length > 0)
             {
                 foreach (var vehicle in vehicles)
                 {

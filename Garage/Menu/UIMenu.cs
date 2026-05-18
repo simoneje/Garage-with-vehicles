@@ -1,13 +1,16 @@
-﻿using Garage.Models;
+﻿using Garage.Core;
+using Garage.Models;
+using Garage.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Garage
+namespace Garage.Menu
 {
+    //Console (Input/Output)
     internal class UIMenu
     {
-        private Garage garage;
+        private GarageHandler handler;
         public UIMenu()
         {
 
@@ -15,9 +18,7 @@ namespace Garage
         public void Start()
         {
             Console.WriteLine("Welcome, how big is your garage?");
-
             int size;
-
             while (true)
             {
                 Console.Write("Input size: ");
@@ -31,12 +32,13 @@ namespace Garage
                 Console.ResetColor();
             }
 
-            garage = new Garage(size);
-
+            handler = new GarageHandler(size);
             if (size > 8)
             {
-                LoadTestVehicles();
+                handler.LoadTestVehicles();
             }
+
+
 
             bool running = true;
 
@@ -54,7 +56,7 @@ namespace Garage
                 switch(input)
                 {
                     case "1":
-                        garage.ListVehicles();
+                        handler.ListVehicles();
                         break;
                     case "2":
                         bool validOrder = OrderVehicle();
@@ -75,7 +77,7 @@ namespace Garage
                             break;
                         }
                     case "3":
-                        garage.SearchVehicleByRegNumber();
+                        handler.SearchVehicleByRegNumber();
                         break;
                     case "4":
                         SearchType();
@@ -83,7 +85,7 @@ namespace Garage
                     case "5":
                         Console.Write("Enter registration number: ");
                         string regNumber = Console.ReadLine();
-                        if (garage.SellVehicle(regNumber))
+                        if (handler.SellVehicle(regNumber))
                         {
                             Console.ForegroundColor = ConsoleColor.Green;
                             Console.WriteLine("Vehicle has been sold");
@@ -170,17 +172,22 @@ namespace Garage
 
             }
             Console.WriteLine("\nVart vill du parkera ditt fordon?");
-            garage.ListVehicles();
+            handler.ListVehicles();
             int.TryParse(Console.ReadLine(), out int parkingSpot);
 
-            bool success = garage.ParkVehicle(vehicle, parkingSpot);
-            if (success)
+            var result = handler.ParkVehicle(vehicle, parkingSpot);
+            if (result.success)
             {
-
+                ConsoleUtility.Message(
+                    result.message,
+                    ConsoleColor.Green);
                 return true;
             }
             else
             {
+                ConsoleUtility.Message(
+                    result.message,
+                    ConsoleColor.Red);
                 return false;
             }
         }
@@ -204,7 +211,7 @@ namespace Garage
                 if (int.TryParse(wheels, out int result))
                 {
                     parsedWheels = result;
-                    garage.SearchVehicle(vehicleType, colorType, parsedWheels);
+                    handler.SearchVehicle(vehicleType, colorType, parsedWheels);
                 }
                 else
                 {
@@ -217,18 +224,10 @@ namespace Garage
             }
             else
             {
-                garage.SearchVehicle(vehicleType, colorType, null);
+                handler.SearchVehicle(vehicleType, colorType, null);
             }
             
         }
-        private void LoadTestVehicles()
-        {
-            garage.ParkVehicle(new Car("ABC123", "Red", 4, "Diesel"), 0);
-            garage.ParkVehicle(new Boat("SEA777", "White", 0, 12), 1);
-            garage.ParkVehicle(new Bus("BUS999", "Blue", 6, 48), 2);
-            garage.ParkVehicle(new Motorcycle("MOTO55", "Black", 2, 600), 3);
-            garage.ParkVehicle(new Airplane("AIR101", "Silver", 8, 2), 4);
-            garage.ParkVehicle(new Car("XYZ888", "Gray", 4, "Gasoline"), 8);
-        }
+
     }
 }

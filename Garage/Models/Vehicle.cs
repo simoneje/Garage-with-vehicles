@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Garage.Interfaces;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Garage
 {
-    internal class Vehicle
+    internal class Vehicle : IVehicle
     {
         public string RegistrationNumber { get; }
         public string Color { get; set; }
@@ -23,6 +25,6 @@ namespace Garage
                    $"Color: {Color,-8} | " +
                    $"Wheels: {AmountWheels,-2}";
         }
-        
+
     }
 }

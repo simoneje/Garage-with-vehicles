@@ -1,4 +1,6 @@
-﻿namespace Garage
+﻿using Garage.Menu;
+
+namespace Garage
 {
     internal class Program
     {
