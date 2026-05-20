@@ -1,5 +1,7 @@
 ﻿using Garage.Core;
+using Garage.Interfaces;
 using Garage.Models;
+using Garage.Models.Enums;
 using Garage.Utilities;
 using System;
 using System.Collections.Generic;
@@ -10,7 +12,7 @@ namespace Garage.Menu
     //Console (Input/Output)
     internal class UIMenu
     {
-        private GarageHandler handler;
+        private IGarageHandler handler;
         public UIMenu()
         {
 
@@ -27,9 +29,8 @@ namespace Garage.Menu
                 {
                     break;
                 }
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Invalid size. Try again.");
-                Console.ResetColor();
+                ConsoleUtility.Message("Invalid size. Try again.", ConsoleColor.Red);
+
             }
 
             handler = new GarageHandler(size);
@@ -48,7 +49,8 @@ namespace Garage.Menu
                 Console.WriteLine("2) Order a vehicle");
                 Console.WriteLine("3) Search the garage by registration number");
                 Console.WriteLine("4) Search the garage by type values");
-                Console.WriteLine("5) Sell a car");
+                Console.WriteLine("5) Sell a vehicle");
+                Console.WriteLine("6) Find vehicle type by LINQ grouping");
                 Console.WriteLine("0) Exit");
 
                 string input = Console.ReadLine();
@@ -62,42 +64,43 @@ namespace Garage.Menu
                         bool validOrder = OrderVehicle();
                         if (validOrder == true)
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Order has been completed");
-
-                            Console.ResetColor();
+                            ConsoleUtility.Message("Order has been completed.", ConsoleColor.Green);
                             break;
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Order was not successfully completed");
-
-                            Console.ResetColor();
+                            ConsoleUtility.Message("Order was not successfully completed", ConsoleColor.Red);
                             break;
                         }
                     case "3":
-                        handler.SearchVehicleByRegNumber();
+                        Console.Write("Enter registration number: ");
+                        string regNumber3 = Console.ReadLine();
+                        var result3 = handler.SearchVehicleByRegNumber(regNumber3);
+                        if (result3.success)
+                            ConsoleUtility.Message(result3.message, ConsoleColor.Green);
+                        else
+                            ConsoleUtility.Message(result3.message, ConsoleColor.Red);
+
                         break;
                     case "4":
                         SearchType();
                         break;
                     case "5":
                         Console.Write("Enter registration number: ");
-                        string regNumber = Console.ReadLine();
-                        if (handler.SellVehicle(regNumber))
+                        string regNumber5 = Console.ReadLine();
+                        var result5 = handler.SellVehicle(regNumber5);
+                        if (result5.success)
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Vehicle has been sold");
-                            Console.ResetColor();
+                            ConsoleUtility.Message(result5.message,ConsoleColor.Green);
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Could not find any vehicle to sell");
-                            Console.ResetColor();
+                            ConsoleUtility.Message(result5.message, ConsoleColor.Red);
                         }
 
+                        break;
+                    case "6":
+                        handler.VehicleStatistics();
                         break;
                     case "0":
                         running = false;
@@ -110,62 +113,134 @@ namespace Garage.Menu
         }
         public bool OrderVehicle()
         {
-            bool running = true;
-            
             Console.WriteLine("\nWhat kind of vehicle would you like to order?");
             Console.WriteLine("1) Car\n2) Boat\n3) Airplane\n4) Bus\n5) Motorcycle");
             int.TryParse(Console.ReadLine(), out int vehicleType);
             if (vehicleType < 1 || vehicleType > 5)
             {
-                Console.WriteLine("Invalid option");
+                ConsoleUtility.Message("Invalid operation.", ConsoleColor.Red);
                 return false;
             }
 
 
             Console.Write("Registration number: ");
             string regNumber = Console.ReadLine();
+            if (handler.RegistrationNumberExists(regNumber))
+            {
+                ConsoleUtility.Message("Registration number already exists.", ConsoleColor.Red);
+                return false;
+            }
 
+            if (!handler.RegistrationNumberValidLength(regNumber))
+            {
+                ConsoleUtility.Message("Registration number is not a valid length of six characters.", ConsoleColor.Red);
+                return false;
+            }
+                
             Console.Write("Color: ");
             string color = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(color))
+            {
+                ConsoleUtility.Message("Color cannot be empty.", ConsoleColor.Red);
+
+                return false;
+            }
 
             Console.Write("Amount of wheels: ");
-            int wheels = int.Parse(Console.ReadLine());
+            if (!int.TryParse(Console.ReadLine(), out int wheels))
+            {
+                ConsoleUtility.Message("Wheels needs to be a number input", ConsoleColor.Red);
+                return false;
+            }
+
 
             Vehicle vehicle = null;
-
+            bool success = false;
             switch(vehicleType)
             {
                 case 1:
-                    Console.Write("Fuel type: ");
-                    string fuelType = Console.ReadLine();
+                    Console.WriteLine("Fuel type:");
+                    Console.WriteLine("1) Petrol");
+                    Console.WriteLine("2) Diesel");
+                    Console.WriteLine("3) Electric");
+                    Console.WriteLine("4) Hybrid");
+                    if (!int.TryParse(Console.ReadLine(), out int fuelChoice))
+                    { 
+                        ConsoleUtility.Message("Invalid fuel type.", ConsoleColor.Red);
+                        return false;
+                    }
+                    FuelType fuelType;
+
+                    switch (fuelChoice)
+                    {
+                        case 1:
+                            fuelType = FuelType.Petrol;
+                            break;
+
+                        case 2:
+                            fuelType = FuelType.Diesel;
+                            break;
+
+                        case 3:
+                            fuelType = FuelType.Electric;
+                            break;
+
+                        case 4:
+                            fuelType = FuelType.Hybrid;
+                            break;
+
+                        default:
+                            ConsoleUtility.Message("Invalid fuel type.", ConsoleColor.Red);
+                            return false;
+                    }
 
                     vehicle = new Car(regNumber, color, wheels, fuelType);
                     break;
 
                 case 2:
                     Console.Write("Length: ");
-                    double length = double.Parse(Console.ReadLine());
+                    success = double.TryParse(Console.ReadLine(), out double length);
+                    if (!success)
+                    {
+                        ConsoleUtility.Message("Not a valid length parameter.", ConsoleColor.Red);
+                        return false;
+                    }
 
                     vehicle = new Boat(regNumber, color, wheels, length);
                     break;
 
                 case 3:
                     Console.Write("Amount of engines: ");
-                    int.TryParse(Console.ReadLine(), out int numberOfEngines);
+                    success = int.TryParse(Console.ReadLine(), out int numberOfEngines);
+                    if (!success)
+                    {
+                        ConsoleUtility.Message("Not a valid number of engines parameter.", ConsoleColor.Red);
+                        return false;
+                    }
 
                     vehicle = new Airplane(regNumber, color, wheels, numberOfEngines);
                     break;
 
                 case 4:
                     Console.Write("Amount of seats: ");
-                    int.TryParse(Console.ReadLine(), out int numberOfSeats);
+                    success = int.TryParse(Console.ReadLine(), out int numberOfSeats);
+                    if (!success)
+                    {
+                        ConsoleUtility.Message("Not a valid number of seats parameter.", ConsoleColor.Red);
+                        return false;
+                    }
 
                     vehicle = new Bus(regNumber, color, wheels, numberOfSeats);
                     break;
 
                 case 5:
                     Console.Write("Cylinder volume: ");
-                    int.TryParse(Console.ReadLine(), out int cylinderVol);
+                    success = int.TryParse(Console.ReadLine(), out int cylinderVol);
+                    if (!success)
+                    {
+                        ConsoleUtility.Message("Not a valid cylinder volume.", ConsoleColor.Red);
+                        return false;
+                    }
 
                     vehicle = new Motorcycle(regNumber, color, wheels, cylinderVol);
                     break;
@@ -173,21 +248,20 @@ namespace Garage.Menu
             }
             Console.WriteLine("\nVart vill du parkera ditt fordon?");
             handler.ListVehicles();
-            int.TryParse(Console.ReadLine(), out int parkingSpot);
+            if (!int.TryParse(Console.ReadLine(), out int parkingSpot))
+            {
+                ConsoleUtility.Message("Parking spot must be a number.", ConsoleColor.Red);
+            }
 
             var result = handler.ParkVehicle(vehicle, parkingSpot);
             if (result.success)
             {
-                ConsoleUtility.Message(
-                    result.message,
-                    ConsoleColor.Green);
+                ConsoleUtility.Message(result.message, ConsoleColor.Green);
                 return true;
             }
             else
             {
-                ConsoleUtility.Message(
-                    result.message,
-                    ConsoleColor.Red);
+                ConsoleUtility.Message(result.message, ConsoleColor.Red);
                 return false;
             }
         }
@@ -208,25 +282,17 @@ namespace Garage.Menu
 
             if (!string.IsNullOrWhiteSpace(wheels))
             {
-                if (int.TryParse(wheels, out int result))
+                if (!int.TryParse(wheels, out int result))
                 {
-                    parsedWheels = result;
-                    handler.SearchVehicle(vehicleType, colorType, parsedWheels);
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("ERROR: Invalid wheel input");
-
-                    Console.ResetColor();
+                    ConsoleUtility.Message("Wheel input must be a number or ignored.", ConsoleColor.Red);
                     return;
                 }
+
+                parsedWheels = result;
             }
-            else
-            {
-                handler.SearchVehicle(vehicleType, colorType, null);
-            }
-            
+
+            handler.SearchVehicle(vehicleType, colorType, parsedWheels);
+
         }
 
     }

@@ -7,26 +7,58 @@ using System.Text;
 
 namespace Garage.Core
 {
-    internal class Garage<T> : IEnumerable<T> where T : Vehicle
+    internal class Garage<T> : IGarage<T> where T : Vehicle
     {
         private T?[] vehicles;
         public int Capacity => vehicles.Length;
+
         public Garage(int capacity)
         {
             vehicles = new T?[capacity];
         }
-        public Vehicle? FindVehicle(string regNumber)
+
+        public T? FindVehicle(string regNumber)
+        {
+            return this.FirstOrDefault(v => v.RegistrationNumber.Equals(regNumber, StringComparison.OrdinalIgnoreCase));
+        }
+        public bool RemoveVehicle(string regNumber)
         {
             for (int i = 0; i < vehicles.Length; i++)
             {
-                if (vehicles[i] != null && vehicles[i].RegistrationNumber == regNumber)
+                if (vehicles[i] != null &&
+                    vehicles[i]!.RegistrationNumber.Equals(regNumber, StringComparison.OrdinalIgnoreCase))
                 {
-                    return vehicles[i];
+                    vehicles[i] = null;
+                    return true;
                 }
             }
-            return null;
-        }
 
+            return false;
+        }
+        public bool ParkVehicle(T vehicle, int parkingSpot)
+        {
+            if (vehicle == null)    //Fordonet måste innehålla ett objekt för att kunna parkeras
+                return false;
+
+            if (parkingSpot < 0 || parkingSpot >= vehicles.Length) //Är parkeringsplatsen en laglig plats?
+                return false;
+
+            if (vehicles[parkingSpot] != null) //Är parkeringsplatsen tagen?
+                return false;
+
+            //Parkera fordon!
+            vehicles[parkingSpot] = vehicle;
+            return true;
+        }
+        public T? GetVehicleAtSpot(int spot)
+        {
+            if (spot < 0 || spot >= Capacity)
+            {
+                return null;
+            }
+                
+            return vehicles[spot];
+        }
         public IEnumerator<T> GetEnumerator()
         {
             foreach (T? vehicle in vehicles)
@@ -41,32 +73,5 @@ namespace Garage.Core
         {
             return GetEnumerator();
         }
-        public bool ParkVehicle(T vehicle, int parkingSpot)
-        {
-            if (vehicle == null)    //Fordonet måste innehålla ett objekt för att kunna parkeras
-                return false;
-
-            else if (parkingSpot < 0 || parkingSpot >= vehicles.Length) //Är parkeringsplatsen en laglig plats?
-                return false;
-
-            else if (vehicles[parkingSpot] != null) //Är parkeringsplatsen tagen?
-                return false;
-
-            else //Parkera fordon!
-            {
-                vehicles[parkingSpot] = vehicle;
-                return true;
-            }
-        }
-        public T? GetVehicleAtSpot(int spot)
-        {
-            if (spot < 0 || spot >= Capacity)
-            {
-                return null;
-            }
-                
-            return vehicles[spot];
-        }
-
     }
 }

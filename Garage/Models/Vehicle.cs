@@ -20,7 +20,7 @@ namespace Garage
         }
         public override string ToString()
         {
-            return $"{GetType().Name,-12} | " +
+            return $"Type: {GetType().Name,-12} | " +
                    $"Reg: {RegistrationNumber,-8} | " +
                    $"Color: {Color,-8} | " +
                    $"Wheels: {AmountWheels,-2}";
